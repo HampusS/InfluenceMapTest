@@ -10,21 +10,23 @@ namespace InfluenceMapTest.GameObjects
 {
     class GameObject
     {
-        Texture2D texture;
-        Vector2 position;
-        Rectangle hitBox;
+        protected Texture2D texture;
+        protected Vector2 position;
 
-        bool remove;
-
-        public bool isRemoved
+        public Color myColor
         {
-            get { return remove; }
-            private set { remove = value; }
+            get;
+            set;
+        }
+
+        public Rectangle HitBox()
+        {
+            return new Rectangle((int)position.X, (int)position.Y, 16, 16);
         }
 
         public bool isSelected(Point mouse)
         {
-            if (hitBox.Contains(mouse))
+            if (HitBox().Contains(mouse))
                 return true;
             return false;
         }
@@ -38,20 +40,19 @@ namespace InfluenceMapTest.GameObjects
 
         public Vector2 GetOrigin()
         {
-            return new Vector2(hitBox.X + (hitBox.Width / 2), hitBox.Y + (hitBox.Height / 2));
+            return new Vector2(HitBox().Width / 2, HitBox().Height / 2);
         }
 
         public Vector2 GetPosition()
         {
-            return new Vector2(hitBox.X, hitBox.Y);
+            return position;
         }
 
         public GameObject(Texture2D texture, Vector2 position)
         {
             this.texture = texture;
             this.position = position;
-            hitBox = new Rectangle((int)position.X, (int)position.Y, 5, 5);
-            remove = false;
+            myColor = Color.LimeGreen;
         }
 
         public void Update()
@@ -59,15 +60,10 @@ namespace InfluenceMapTest.GameObjects
 
         }
 
-        public void Draw(SpriteBatch spriteBatch)
+        public virtual void Draw(SpriteBatch spriteBatch)
         {
-            spriteBatch.Draw(texture, hitBox, Color.White);
+            spriteBatch.Draw(texture, position, HitBox(), myColor, 0, GetOrigin(), 1, SpriteEffects.None, 0);
         }
 
-        public void RemoveMe()
-        {
-
-            remove = true;
-        }
     }
 }

@@ -13,9 +13,8 @@ namespace InfluenceMapTest
     {
         Rectangle hitBox;
         Texture2D texture;
-        float influence;
-        float max, min;
-        int size;
+        int width, height;
+        double influence;
 
         public bool isOccupied
         {
@@ -25,13 +24,12 @@ namespace InfluenceMapTest
 
         public Color myColor
         {
-            get;
-            set;
+            get; private set;
         }
 
         public Vector2 GetOrigin()
         {
-            return new Vector2(hitBox.X + (size / 2), hitBox.Y + (size / 2));
+            return new Vector2(hitBox.X + (width / 2), hitBox.Y + (height / 2));
         }
 
         public Vector2 GetPosition()
@@ -39,18 +37,37 @@ namespace InfluenceMapTest
             return new Vector2(hitBox.X, hitBox.Y);
         }
 
-        public Cell(Texture2D texture, int x, int y, int size)
+        public Cell(Texture2D texture, int x, int y, int width, int height)
         {
             this.texture = texture;
-            this.hitBox = new Rectangle(x, y, size, size);
-            this.size = size;
-            myColor = Color.White;
-            influence = 0.2f;
+            this.hitBox = new Rectangle(x, y, width, height);
+            this.width = width;
+            this.height = height;
+            influence = 0.0f;
+            myColor = Color.Black;
         }
 
         public void Draw(SpriteBatch spriteBatch)
         {
-            spriteBatch.Draw(texture, hitBox, myColor * influence);
+            float infHold = (float)influence;
+            if (influence < 0)
+            {
+                myColor = Color.OrangeRed;
+                infHold *= -1;
+            }
+            else if (influence > 0)
+                myColor = Color.DeepSkyBlue;
+            else
+                myColor = Color.Black;
+
+            spriteBatch.Draw(texture, hitBox, myColor * (float)Math.Abs(influence));
+        }
+
+        public void ResetCell()
+        {
+            myColor = Color.Black;
+            isOccupied = false;
+            influence = 0;
         }
 
         public bool CheckPointIntertsect(Point pos)
@@ -62,14 +79,14 @@ namespace InfluenceMapTest
 
         public bool CheckOccupancy(GameObject obj)
         {
-            if (hitBox.Contains(obj.GetOrigin()))
+            if (hitBox.Contains(obj.GetPosition()))
                 return true;
             return false;
         }
 
-        public void UpdateColor(float modifier)
+        public void GiveInfluence(double inf)
         {
-            influence = modifier;
+            influence += inf;
         }
 
     }

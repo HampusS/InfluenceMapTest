@@ -18,7 +18,10 @@ namespace InfluenceMapTest
         public static MouseState mouse = Mouse.GetState(), oldMouse;
         public static KeyboardState kbd = Keyboard.GetState(), oldKbd;
 
-        List<GameObject> objects;
+        //List<GameObject> objects;
+        List<Positive> posObj;
+        List<Negative> negObj;
+        int objSelect = 0;
 
         public Game1()
         {
@@ -35,8 +38,12 @@ namespace InfluenceMapTest
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
-            map = new Map(CreatePixel(Color.White), 47, 28, 16);
-            objects = new List<GameObject>();
+            map = new Map(CreatePixel());
+            //objects = new List<GameObject>();
+
+            posObj = new List<Positive>();
+            negObj = new List<Negative>();
+
             IsMouseVisible = true;
             base.Initialize();
         }
@@ -73,44 +80,99 @@ namespace InfluenceMapTest
             mouse = Mouse.GetState();
             oldKbd = kbd;
             kbd = Keyboard.GetState();
+
+            if (kbd.IsKeyDown(Keys.D1) && oldKbd.IsKeyUp(Keys.D1))
+                objSelect = 1;
+            else if (kbd.IsKeyDown(Keys.D2) && oldKbd.IsKeyUp(Keys.D2))
+                objSelect = 2;
+
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
             map.Update();
-            // TODO: Add your update logic here
-            if (mouse.LeftButton == ButtonState.Pressed && oldMouse.LeftButton == ButtonState.Released)
+
+            //ADD OBJECTS
+            if (mouse.LeftButton == ButtonState.Pressed)
             {
                 if (map.CheckVacancy(mouse.Position))
                 {
-                    objects.Add(new GameObject(CreatePixel(Color.LightGreen), map.GetCellPosition(mouse.Position)));
-                    map.SetCellOccupancy(mouse.Position, true);
+                    if (map.GetCellPosition(mouse.Position) != Vector2.Zero)
+                    {
+                        switch (objSelect)
+                        {
+                            case 1:
+                                posObj.Add(new Positive(CreatePixel(), map.GetCellPosition(mouse.Position)));
+                                map.SetCellOccupancy(mouse.Position, true);
+                                for (int i = 0; i < posObj.Count; i++)
+                                {
+                                    map.CalculateInfluenceFromObject(posObj[i]);
+                                }
+                                break;
+                            case 2:
+                                negObj.Add(new Negative(CreatePixel(), map.GetCellPosition(mouse.Position)));
+                                map.SetCellOccupancy(mouse.Position, true);
+                                for (int j = 0; j < negObj.Count; j++)
+                                {
+                                    map.CalculateInfluenceFromObject(negObj[j]);
+                                }
+                                break;
+                        }
+
+                    }
                 }
             }
 
-            if (mouse.RightButton == ButtonState.Pressed && oldMouse.RightButton == ButtonState.Released)
+
+
+
+            // ON INDIVIDUAL REMOVAL
+            SelectObjToRemove();
+
+            ClearMap();
+
+            base.Update(gameTime);
+        }
+
+        private void SelectObjToRemove()
+        {
+            if (mouse.RightButton == ButtonState.Pressed)
             {
                 if (!map.CheckVacancy(mouse.Position))
                 {
-                    for (int i = objects.Count - 1; i >= 0; --i)
+                    for (int i = posObj.Count; i >= 0; --i)
                     {
-                        if (objects[i].myCellIsSelected(map.GetCell(mouse.Position)))
+                        if (posObj[i].myCellIsSelected(map.GetCellFromPoint(mouse.Position)))
                         {
-                            objects.RemoveAt(i);
+                            posObj.RemoveAt(i);
+                            map.SetCellOccupancy(mouse.Position, false);
+                        }
+                    }
+
+                    for (int i = 0; i < negObj.Count; i++)
+                    {
+                        if (negObj[i].myCellIsSelected(map.GetCellFromPoint(mouse.Position)))
+                        {
+                            negObj.RemoveAt(i);
                             map.SetCellOccupancy(mouse.Position, false);
                         }
                     }
                 }
             }
+        }
 
+        private void ClearMap()
+        {
             if (kbd.IsKeyDown(Keys.R) && oldKbd.IsKeyUp(Keys.R))
             {
-                for (int i = objects.Count - 1; i >= 0; --i)
+                for (int i = negObj.Count - 1; i >= 0; --i)
                 {
-                    objects.RemoveAt(i);
-                    map.ClearOccupancy();
+                    negObj.RemoveAt(i);
                 }
+                for (int i = posObj.Count - 1; i >= 0; --i)
+                {
+                    posObj.RemoveAt(i);
+                }
+                map.ClearOccupancy();
             }
-
-            base.Update(gameTime);
         }
 
         /// <summary>
@@ -123,10 +185,10 @@ namespace InfluenceMapTest
 
             spriteBatch.Begin();
             map.Draw(spriteBatch);
-            foreach (GameObject obj in objects)
-            {
-                obj.Draw(spriteBatch);
-            }
+            //foreach (GameObject obj in objects)
+            //{
+            //    //obj.Draw(spriteBatch);
+            //}
             spriteBatch.End();
 
             // TODO: Add your drawing code here
@@ -134,10 +196,10 @@ namespace InfluenceMapTest
             base.Draw(gameTime);
         }
 
-        Texture2D CreatePixel(Color color)
+        Texture2D CreatePixel()
         {
             var rect = new Texture2D(GraphicsDevice, 1, 1);
-            rect.SetData(new[] { color });
+            rect.SetData(new[] { Color.White });
             return rect;
         }
     }
