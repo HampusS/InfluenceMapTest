@@ -1,6 +1,9 @@
-﻿using Microsoft.Xna.Framework;
+﻿using InfluenceMapTest.GameObjects;
+using InfluenceMapTest.MapFiles;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System.Collections.Generic;
 
 namespace InfluenceMapTest
 {
@@ -11,6 +14,11 @@ namespace InfluenceMapTest
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
+        Map map;
+        public static MouseState mouse = Mouse.GetState(), oldMouse;
+        public static KeyboardState kbd = Keyboard.GetState(), oldKbd;
+
+        List<GameObject> objects;
 
         public Game1()
         {
@@ -27,7 +35,9 @@ namespace InfluenceMapTest
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
-
+            map = new Map(CreatePixel(Color.White), 47, 28, 16);
+            objects = new List<GameObject>();
+            IsMouseVisible = true;
             base.Initialize();
         }
 
@@ -59,10 +69,46 @@ namespace InfluenceMapTest
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
+            oldMouse = mouse;
+            mouse = Mouse.GetState();
+            oldKbd = kbd;
+            kbd = Keyboard.GetState();
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
-
+            map.Update();
             // TODO: Add your update logic here
+            if (mouse.LeftButton == ButtonState.Pressed && oldMouse.LeftButton == ButtonState.Released)
+            {
+                if (map.CheckVacancy(mouse.Position))
+                {
+                    objects.Add(new GameObject(CreatePixel(Color.LightGreen), map.GetCellPosition(mouse.Position)));
+                    map.SetCellOccupancy(mouse.Position, true);
+                }
+            }
+
+            if (mouse.RightButton == ButtonState.Pressed && oldMouse.RightButton == ButtonState.Released)
+            {
+                if (!map.CheckVacancy(mouse.Position))
+                {
+                    for (int i = objects.Count - 1; i >= 0; --i)
+                    {
+                        if (objects[i].myCellIsSelected(map.GetCell(mouse.Position)))
+                        {
+                            objects.RemoveAt(i);
+                            map.SetCellOccupancy(mouse.Position, false);
+                        }
+                    }
+                }
+            }
+
+            if (kbd.IsKeyDown(Keys.R) && oldKbd.IsKeyUp(Keys.R))
+            {
+                for (int i = objects.Count - 1; i >= 0; --i)
+                {
+                    objects.RemoveAt(i);
+                    map.ClearOccupancy();
+                }
+            }
 
             base.Update(gameTime);
         }
@@ -73,11 +119,26 @@ namespace InfluenceMapTest
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.CornflowerBlue);
+            GraphicsDevice.Clear(Color.Black);
+
+            spriteBatch.Begin();
+            map.Draw(spriteBatch);
+            foreach (GameObject obj in objects)
+            {
+                obj.Draw(spriteBatch);
+            }
+            spriteBatch.End();
 
             // TODO: Add your drawing code here
 
             base.Draw(gameTime);
+        }
+
+        Texture2D CreatePixel(Color color)
+        {
+            var rect = new Texture2D(GraphicsDevice, 1, 1);
+            rect.SetData(new[] { color });
+            return rect;
         }
     }
 }
