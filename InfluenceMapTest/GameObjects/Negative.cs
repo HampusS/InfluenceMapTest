@@ -11,12 +11,12 @@ namespace InfluenceMapTest.GameObjects
     class Negative : GameObject
     {
 
-        public Negative(Texture2D texture, Vector2 position)
+        public Negative(Texture2D texture, Point position)
             :base(texture, position)
         {
             this.texture = texture;
             this.position = position;
-            myColor = Color.OrangeRed;
+            myColor = Color.MonoGameOrange;
         }
 
         public override void Draw(SpriteBatch spriteBatch)

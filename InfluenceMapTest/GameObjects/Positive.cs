@@ -11,12 +11,12 @@ namespace InfluenceMapTest.GameObjects
     class Positive : GameObject
     {
 
-        public Positive(Texture2D texture, Vector2 position)
+        public Positive(Texture2D texture, Point position)
             :base(texture, position)
         {
             this.texture = texture;
             this.position = position;
-            myColor = Color.LightBlue;
+            myColor = Color.SkyBlue;
         }
 
         public override void Draw(SpriteBatch spriteBatch)

@@ -1,5 +1,6 @@
 ﻿using InfluenceMapTest.GameObjects;
 using InfluenceMapTest.MapFiles;
+using InfluenceMapTest.MapFiles.Maps;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -14,13 +15,13 @@ namespace InfluenceMapTest
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
-        Map map;
+        BlockedInfluenceMap blockedMap;
+        InfluenceMap positiveInfluenceMap, negativeInfluenceMap;
         public static MouseState mouse = Mouse.GetState(), oldMouse;
         public static KeyboardState kbd = Keyboard.GetState(), oldKbd;
 
-        //List<GameObject> objects;
-        List<Positive> posObj;
-        List<Negative> negObj;
+        List<Positive> positiveObjects;
+        List<Negative> negativeObjects;
         int objSelect = 0;
 
         public Game1()
@@ -38,11 +39,12 @@ namespace InfluenceMapTest
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
-            map = new Map(CreatePixel());
-            //objects = new List<GameObject>();
+            positiveInfluenceMap = new InfluenceMap(CreatePixel());
+            negativeInfluenceMap = new InfluenceMap(CreatePixel());
+            blockedMap = new BlockedInfluenceMap(CreatePixel());
 
-            posObj = new List<Positive>();
-            negObj = new List<Negative>();
+            positiveObjects = new List<Positive>();
+            negativeObjects = new List<Negative>();
 
             IsMouseVisible = true;
             base.Initialize();
@@ -57,7 +59,6 @@ namespace InfluenceMapTest
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            // TODO: use this.Content to load your game content here
         }
 
         /// <summary>
@@ -88,90 +89,86 @@ namespace InfluenceMapTest
 
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
-            map.Update();
 
             //ADD OBJECTS
             if (mouse.LeftButton == ButtonState.Pressed)
             {
-                if (map.CheckVacancy(mouse.Position))
+                if (blockedMap.CheckVacancy(mouse.Position))
                 {
-                    if (map.GetCellPosition(mouse.Position) != Vector2.Zero)
+                    if (blockedMap.GetCellPosition(mouse.Position) != Point.Zero)
                     {
                         switch (objSelect)
                         {
                             case 1:
-                                posObj.Add(new Positive(CreatePixel(), map.GetCellPosition(mouse.Position)));
-                                map.SetCellOccupancy(mouse.Position, true);
-                                for (int i = 0; i < posObj.Count; i++)
-                                {
-                                    map.CalculateInfluenceFromObject(posObj[i]);
-                                }
+                                positiveObjects.Add(new Positive(CreatePixel(), positiveInfluenceMap.GetCellPosition(mouse.Position)));
+                                positiveInfluenceMap.CalculateInfluenceFromObject(positiveObjects[positiveObjects.Count - 1]);
                                 break;
                             case 2:
-                                negObj.Add(new Negative(CreatePixel(), map.GetCellPosition(mouse.Position)));
-                                map.SetCellOccupancy(mouse.Position, true);
-                                for (int j = 0; j < negObj.Count; j++)
-                                {
-                                    map.CalculateInfluenceFromObject(negObj[j]);
-                                }
+                                negativeObjects.Add(new Negative(CreatePixel(), negativeInfluenceMap.GetCellPosition(mouse.Position)));
+                                negativeInfluenceMap.CalculateInfluenceFromObject(negativeObjects[negativeObjects.Count - 1]);
                                 break;
                         }
-
+                        blockedMap.SetCellOccupancy(mouse.Position, true);
                     }
                 }
             }
 
 
-
-
             // ON INDIVIDUAL REMOVAL
             SelectObjToRemove();
-
             ClearMap();
 
             base.Update(gameTime);
         }
 
+        /// <summary>
+        /// Selects an individual tile and removes the obj in that tile
+        /// </summary>
         private void SelectObjToRemove()
         {
             if (mouse.RightButton == ButtonState.Pressed)
             {
-                if (!map.CheckVacancy(mouse.Position))
+                if (!blockedMap.CheckVacancy(mouse.Position))
                 {
-                    for (int i = posObj.Count; i >= 0; --i)
+                    for (int i = positiveObjects.Count; i >= 0; --i)
                     {
-                        if (posObj[i].myCellIsSelected(map.GetCellFromPoint(mouse.Position)))
+                        if (positiveObjects[i].myCellIsSelected(positiveInfluenceMap.GetCellFromPoint(mouse.Position)))
                         {
-                            posObj.RemoveAt(i);
-                            map.SetCellOccupancy(mouse.Position, false);
+                            positiveObjects.RemoveAt(i);
+                            blockedMap.SetCellOccupancy(mouse.Position, false);
                         }
                     }
 
-                    for (int i = 0; i < negObj.Count; i++)
+                    for (int i = 0; i < negativeObjects.Count; i++)
                     {
-                        if (negObj[i].myCellIsSelected(map.GetCellFromPoint(mouse.Position)))
+                        if (negativeObjects[i].myCellIsSelected(positiveInfluenceMap.GetCellFromPoint(mouse.Position)))
                         {
-                            negObj.RemoveAt(i);
-                            map.SetCellOccupancy(mouse.Position, false);
+                            negativeObjects.RemoveAt(i);
+                            blockedMap.SetCellOccupancy(mouse.Position, false);
                         }
                     }
                 }
             }
         }
 
+        /// <summary>
+        /// Clears The entire influence map and game objects
+        /// </summary>
         private void ClearMap()
         {
             if (kbd.IsKeyDown(Keys.R) && oldKbd.IsKeyUp(Keys.R))
             {
-                for (int i = negObj.Count - 1; i >= 0; --i)
+                for (int i = negativeObjects.Count - 1; i >= 0; --i)
                 {
-                    negObj.RemoveAt(i);
+                    negativeObjects.RemoveAt(i);
                 }
-                for (int i = posObj.Count - 1; i >= 0; --i)
+                for (int i = positiveObjects.Count - 1; i >= 0; --i)
                 {
-                    posObj.RemoveAt(i);
-                }
-                map.ClearOccupancy();
+                    positiveObjects.RemoveAt(i);
+                }                
+                blockedMap.ClearOccupancy();
+                positiveInfluenceMap = new InfluenceMap(CreatePixel());
+                negativeInfluenceMap = new InfluenceMap(CreatePixel());
             }
         }
 
@@ -182,17 +179,18 @@ namespace InfluenceMapTest
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.Black);
-
             spriteBatch.Begin();
-            map.Draw(spriteBatch);
-            //foreach (GameObject obj in objects)
-            //{
-            //    //obj.Draw(spriteBatch);
-            //}
+            positiveInfluenceMap.Draw(spriteBatch);
+            negativeInfluenceMap.Draw(spriteBatch);
+            foreach (GameObject obj in positiveObjects)
+            {
+                obj.Draw(spriteBatch);
+            }
+            foreach (GameObject obj in negativeObjects)
+            {
+                obj.Draw(spriteBatch);
+            }
             spriteBatch.End();
-
-            // TODO: Add your drawing code here
-
             base.Draw(gameTime);
         }
 

@@ -24,17 +24,17 @@ namespace InfluenceMapTest
 
         public Color myColor
         {
-            get; private set;
+            get; set;
         }
 
-        public Vector2 GetOrigin()
+        public Point GetOrigin()
         {
-            return new Vector2(hitBox.X + (width / 2), hitBox.Y + (height / 2));
+            return new Point(hitBox.X + (width / 2), hitBox.Y + (height / 2));
         }
 
-        public Vector2 GetPosition()
+        public Point GetPosition()
         {
-            return new Vector2(hitBox.X, hitBox.Y);
+            return new Point(hitBox.X, hitBox.Y);
         }
 
         public Cell(Texture2D texture, int x, int y, int width, int height)
@@ -49,18 +49,7 @@ namespace InfluenceMapTest
 
         public void Draw(SpriteBatch spriteBatch)
         {
-            float infHold = (float)influence;
-            if (influence < 0)
-            {
-                myColor = Color.OrangeRed;
-                infHold *= -1;
-            }
-            else if (influence > 0)
-                myColor = Color.DeepSkyBlue;
-            else
-                myColor = Color.Black;
-
-            spriteBatch.Draw(texture, hitBox, myColor * (float)Math.Abs(influence));
+            spriteBatch.Draw(texture, hitBox, myColor * (float)influence);
         }
 
         public void ResetCell()

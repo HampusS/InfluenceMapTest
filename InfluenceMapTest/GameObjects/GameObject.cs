@@ -11,7 +11,7 @@ namespace InfluenceMapTest.GameObjects
     class GameObject
     {
         protected Texture2D texture;
-        protected Vector2 position;
+        protected Point position;
 
         public Color myColor
         {
@@ -21,7 +21,7 @@ namespace InfluenceMapTest.GameObjects
 
         public Rectangle HitBox()
         {
-            return new Rectangle((int)position.X, (int)position.Y, 16, 16);
+            return new Rectangle(position.X, position.Y, 16, 16);
         }
 
         public bool isSelected(Point mouse)
@@ -38,31 +38,21 @@ namespace InfluenceMapTest.GameObjects
             return false;
         }
 
-        public Vector2 GetOrigin()
-        {
-            return new Vector2(HitBox().Width / 2, HitBox().Height / 2);
-        }
-
-        public Vector2 GetPosition()
+        public Point GetPosition()
         {
             return position;
         }
 
-        public GameObject(Texture2D texture, Vector2 position)
+        public GameObject(Texture2D texture, Point position)
         {
             this.texture = texture;
             this.position = position;
             myColor = Color.LimeGreen;
         }
 
-        public void Update()
-        {
-
-        }
-
         public virtual void Draw(SpriteBatch spriteBatch)
         {
-            spriteBatch.Draw(texture, position, HitBox(), myColor, 0, GetOrigin(), 1, SpriteEffects.None, 0);
+            spriteBatch.Draw(texture, HitBox(), null, myColor, 0, Vector2.Zero, SpriteEffects.None, 0);
         }
 
     }
