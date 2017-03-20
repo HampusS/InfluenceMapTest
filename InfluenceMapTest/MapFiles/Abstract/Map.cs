@@ -9,43 +9,40 @@ using System.Threading.Tasks;
 
 namespace InfluenceMapTest.MapFiles
 {
-    internal struct InfluenceMapConfig
-    {
-        internal static int CellWidth = 16;
-        internal static int CellHeight = 16;
-        internal static int MapWidth = 45 * 14;
-        internal static int MapHeight = 27 * 14;
-        internal static float FallOff = 0.9f;
-    }
-
     class Map
     {
         protected int mapWidth, mapHeight;
         protected int cellWidth, cellHeight;
-        protected Cell[,] map;
+        public Cell[,] map;
         protected Texture2D texture;
-
+        protected Color myColor;
         protected float falloff;
 
-        public Map(Texture2D texture)
+        public Map(Texture2D texture, Color myColor)
         {
             this.texture = texture;
+            this.myColor = myColor;
+            Initialize();
+            CreateMap(myColor);
+        }
+
+        protected virtual void Initialize()
+        {
             falloff = InfluenceMapConfig.FallOff;
             cellWidth = InfluenceMapConfig.CellWidth;
             cellHeight = InfluenceMapConfig.CellHeight;
             mapWidth = InfluenceMapConfig.MapWidth;
             mapHeight = InfluenceMapConfig.MapHeight;
-            CreateMap();
         }
 
-        protected virtual void CreateMap()
+        protected virtual void CreateMap(Color myColor)
         {
             map = new Cell[mapWidth, mapHeight];
             for (int i = 0; i < mapWidth; i++)
             {
                 for (int j = 0; j < mapHeight; j++)
                 {
-                    map[i, j] = new Cell(texture, i * (cellWidth), j * (cellHeight), cellWidth, cellHeight);
+                    map[i, j] = new Cell(texture, myColor, i * (cellWidth), j * (cellHeight), cellWidth, cellHeight);
                 }
             }
         }
@@ -61,34 +58,12 @@ namespace InfluenceMapTest.MapFiles
             }
         }
 
-        public Point GetCellPosition(Point pos)
+        public Cell GetCell(Point pos)
         {
-            if (pos.X > 0 && pos.X < mapWidth * cellWidth && pos.Y > 0 && pos.Y < mapHeight * cellHeight)
+            if (pos.X >= 0 && pos.X < mapWidth * cellWidth && pos.Y >= 0 && pos.Y < mapHeight * cellHeight)
             {
                 int x = pos.X / cellWidth;
                 int y = pos.Y / cellHeight;
-                return map[x, y].GetPosition();
-            }
-            return Point.Zero;
-        }
-
-        public Cell GetCellFromPoint(Point pos)
-        {
-            if (pos.X > 0 && pos.X < mapWidth * cellWidth && pos.Y > 0 && pos.Y < mapHeight * cellHeight)
-            {
-                int x = (int)pos.X / cellWidth;
-                int y = (int)pos.Y / cellHeight;
-                return map[x, y];
-            }
-            return null;
-        }
-
-        public Cell GetCellFromVect(Vector2 pos)
-        {
-            if (pos.X > 0 && pos.X < mapWidth * cellWidth && pos.Y > 0 && pos.Y < mapHeight * cellHeight)
-            {
-                int x = (int)pos.X / cellWidth;
-                int y = (int)pos.Y / cellHeight;
                 return map[x, y];
             }
             return null;

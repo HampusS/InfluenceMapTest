@@ -8,6 +8,16 @@ using System.Collections.Generic;
 
 namespace InfluenceMapTest
 {
+
+    public struct InfluenceMapConfig
+    {
+        public static int CellWidth = 16;
+        public static int CellHeight = 16;
+        public static int MapWidth = 50;
+        public static int MapHeight = 30;
+        public static float FallOff = 0.8f;
+    }
+
     /// <summary>
     /// This is the main type for your game.
     /// </summary>
@@ -15,14 +25,18 @@ namespace InfluenceMapTest
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
-        BlockedInfluenceMap blockedMap;
-        InfluenceMap positiveInfluenceMap, negativeInfluenceMap;
-        public static MouseState mouse = Mouse.GetState(), oldMouse;
         public static KeyboardState kbd = Keyboard.GetState(), oldKbd;
+        public static MouseState mouse = Mouse.GetState(), oldMouse;
 
-        List<Positive> positiveObjects;
-        List<Negative> negativeObjects;
-        int objSelect = 0;
+        InfluenceMap positiveInfluenceMap, negativeInfluenceMap;
+        BlockedInfluenceMap blockedMap;
+        FinalInfluenceMap influenceMap;
+
+        List<GameObject> positiveObjects;
+        List<GameObject> negativeObjects;
+        List<GameObject> gameObjects;
+
+        int objSelect = 1;
 
         public Game1()
         {
@@ -39,12 +53,14 @@ namespace InfluenceMapTest
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
-            positiveInfluenceMap = new InfluenceMap(CreatePixel());
-            negativeInfluenceMap = new InfluenceMap(CreatePixel());
-            blockedMap = new BlockedInfluenceMap(CreatePixel());
+            positiveInfluenceMap = new InfluenceMap(CreatePixel(), Color.SkyBlue);
+            negativeInfluenceMap = new InfluenceMap(CreatePixel(), Color.MonoGameOrange);
+            blockedMap = new BlockedInfluenceMap(CreatePixel(), Color.Violet);
+            influenceMap = new FinalInfluenceMap(CreatePixel(), Color.Black);
 
-            positiveObjects = new List<Positive>();
-            negativeObjects = new List<Negative>();
+            positiveObjects = new List<GameObject>();
+            negativeObjects = new List<GameObject>();
+            gameObjects = new List<GameObject>();
 
             IsMouseVisible = true;
             base.Initialize();
@@ -58,7 +74,6 @@ namespace InfluenceMapTest
         {
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
-
         }
 
         /// <summary>
@@ -82,70 +97,53 @@ namespace InfluenceMapTest
             oldKbd = kbd;
             kbd = Keyboard.GetState();
 
+            foreach (GameObject obj in positiveObjects)
+            {
+                obj.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
+            }
+
+            foreach (GameObject obj in negativeObjects)
+            {
+                obj.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
+            }
+
+            positiveInfluenceMap.Update(positiveObjects);
+            negativeInfluenceMap.Update(negativeObjects);
+            blockedMap.Update(gameObjects);
+
             if (kbd.IsKeyDown(Keys.D1) && oldKbd.IsKeyUp(Keys.D1))
                 objSelect = 1;
             else if (kbd.IsKeyDown(Keys.D2) && oldKbd.IsKeyUp(Keys.D2))
                 objSelect = 2;
 
+            if (mouse.LeftButton == ButtonState.Pressed)
+                AddGameObject();
+            else if (kbd.IsKeyDown(Keys.R) && oldKbd.IsKeyUp(Keys.R))
+                ClearMap();
+
+            influenceMap.FinalizeInfluence(positiveInfluenceMap, negativeInfluenceMap);
+
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
-
-            //ADD OBJECTS
-            if (mouse.LeftButton == ButtonState.Pressed)
-            {
-                if (blockedMap.CheckVacancy(mouse.Position))
-                {
-                    if (blockedMap.GetCellPosition(mouse.Position) != Point.Zero)
-                    {
-                        switch (objSelect)
-                        {
-                            case 1:
-                                positiveObjects.Add(new Positive(CreatePixel(), positiveInfluenceMap.GetCellPosition(mouse.Position)));
-                                positiveInfluenceMap.CalculateInfluenceFromObject(positiveObjects[positiveObjects.Count - 1]);
-                                break;
-                            case 2:
-                                negativeObjects.Add(new Negative(CreatePixel(), negativeInfluenceMap.GetCellPosition(mouse.Position)));
-                                negativeInfluenceMap.CalculateInfluenceFromObject(negativeObjects[negativeObjects.Count - 1]);
-                                break;
-                        }
-                        blockedMap.SetCellOccupancy(mouse.Position, true);
-                    }
-                }
-            }
-
-
-            // ON INDIVIDUAL REMOVAL
-            SelectObjToRemove();
-            ClearMap();
-
             base.Update(gameTime);
         }
 
-        /// <summary>
-        /// Selects an individual tile and removes the obj in that tile
-        /// </summary>
-        private void SelectObjToRemove()
+        private void AddGameObject()
         {
-            if (mouse.RightButton == ButtonState.Pressed)
+            if (blockedMap.GetCell(mouse.Position) != null)
             {
-                if (!blockedMap.CheckVacancy(mouse.Position))
+                if (blockedMap.CheckVacancy(mouse.Position))
                 {
-                    for (int i = positiveObjects.Count; i >= 0; --i)
+                    switch (objSelect)
                     {
-                        if (positiveObjects[i].myCellIsSelected(positiveInfluenceMap.GetCellFromPoint(mouse.Position)))
-                        {
-                            positiveObjects.RemoveAt(i);
-                            blockedMap.SetCellOccupancy(mouse.Position, false);
-                        }
-                    }
-
-                    for (int i = 0; i < negativeObjects.Count; i++)
-                    {
-                        if (negativeObjects[i].myCellIsSelected(positiveInfluenceMap.GetCellFromPoint(mouse.Position)))
-                        {
-                            negativeObjects.RemoveAt(i);
-                            blockedMap.SetCellOccupancy(mouse.Position, false);
-                        }
+                        case 1:
+                            positiveObjects.Add(new GameObject(CreatePixel(), positiveInfluenceMap.GetCell(mouse.Position).GetPosition(), Color.LimeGreen, InfluenceMapConfig.CellWidth));
+                            gameObjects.Add(positiveObjects[positiveObjects.Count - 1]);
+                            break;
+                        case 2:
+                            negativeObjects.Add(new GameObject(CreatePixel(), negativeInfluenceMap.GetCell(mouse.Position).GetPosition(), Color.HotPink, InfluenceMapConfig.CellWidth));
+                            gameObjects.Add(negativeObjects[negativeObjects.Count - 1]);
+                            break;
                     }
                 }
             }
@@ -156,20 +154,13 @@ namespace InfluenceMapTest
         /// </summary>
         private void ClearMap()
         {
-            if (kbd.IsKeyDown(Keys.R) && oldKbd.IsKeyUp(Keys.R))
-            {
-                for (int i = negativeObjects.Count - 1; i >= 0; --i)
-                {
-                    negativeObjects.RemoveAt(i);
-                }
-                for (int i = positiveObjects.Count - 1; i >= 0; --i)
-                {
-                    positiveObjects.RemoveAt(i);
-                }                
-                blockedMap.ClearOccupancy();
-                positiveInfluenceMap = new InfluenceMap(CreatePixel());
-                negativeInfluenceMap = new InfluenceMap(CreatePixel());
-            }
+            negativeObjects.Clear();
+            positiveObjects.Clear();
+            gameObjects.Clear();
+            blockedMap = new BlockedInfluenceMap(CreatePixel(), Color.Black);
+            positiveInfluenceMap = new InfluenceMap(CreatePixel(), Color.SkyBlue);
+            negativeInfluenceMap = new InfluenceMap(CreatePixel(), Color.MonoGameOrange);
+            influenceMap = new FinalInfluenceMap(CreatePixel(), Color.Black);
         }
 
         /// <summary>
@@ -180,8 +171,9 @@ namespace InfluenceMapTest
         {
             GraphicsDevice.Clear(Color.Black);
             spriteBatch.Begin();
-            positiveInfluenceMap.Draw(spriteBatch);
-            negativeInfluenceMap.Draw(spriteBatch);
+
+            influenceMap.Draw(spriteBatch);
+            blockedMap.Draw(spriteBatch);
             foreach (GameObject obj in positiveObjects)
             {
                 obj.Draw(spriteBatch);
@@ -190,6 +182,7 @@ namespace InfluenceMapTest
             {
                 obj.Draw(spriteBatch);
             }
+
             spriteBatch.End();
             base.Draw(gameTime);
         }

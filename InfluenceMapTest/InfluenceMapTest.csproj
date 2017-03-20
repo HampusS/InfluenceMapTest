@@ -39,13 +39,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="GameObjects\GameObject.cs" />
-    <Compile Include="GameObjects\Negative.cs" />
-    <Compile Include="GameObjects\Positive.cs" />
     <Compile Include="MapFiles\Abstract\Cell.cs" />
     <Compile Include="Game1.cs" />
     <Compile Include="MapFiles\Abstract\Map.cs" />
     <Compile Include="MapFiles\Maps\BlockedInfluenceMap.cs" />
     <Compile Include="MapFiles\Maps\FinalInfluenceMap.cs" />
+    <Compile Include="MapFiles\Maps\GoalMap.cs" />
     <Compile Include="MapFiles\Maps\InfluenceMap.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

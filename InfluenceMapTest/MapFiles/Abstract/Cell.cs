@@ -15,16 +15,24 @@ namespace InfluenceMapTest
         Texture2D texture;
         int width, height;
         double influence;
+        Color myColor;
+
+        public Color MyColor
+        {
+            get { return myColor; }
+            set { myColor = value; }
+        }
+
+        public double Influence
+        {
+            get { return influence; }
+            set { influence = value; }
+        }
 
         public bool isOccupied
         {
             get;
             set;
-        }
-
-        public Color myColor
-        {
-            get; set;
         }
 
         public Point GetOrigin()
@@ -37,26 +45,24 @@ namespace InfluenceMapTest
             return new Point(hitBox.X, hitBox.Y);
         }
 
-        public Cell(Texture2D texture, int x, int y, int width, int height)
+        public Cell(Texture2D texture, Color myColor, int x, int y, int width, int height)
         {
             this.texture = texture;
             this.hitBox = new Rectangle(x, y, width, height);
             this.width = width;
             this.height = height;
+            this.myColor = myColor;
             influence = 0.0f;
-            myColor = Color.Black;
+        }
+
+        public void Update()
+        {
+
         }
 
         public void Draw(SpriteBatch spriteBatch)
         {
             spriteBatch.Draw(texture, hitBox, myColor * (float)influence);
-        }
-
-        public void ResetCell()
-        {
-            myColor = Color.Black;
-            isOccupied = false;
-            influence = 0;
         }
 
         public bool CheckPointIntertsect(Point pos)
@@ -68,7 +74,7 @@ namespace InfluenceMapTest
 
         public bool CheckOccupancy(GameObject obj)
         {
-            if (hitBox.Contains(obj.GetPosition()))
+            if (hitBox.Contains(obj.GetCenter()))
                 return true;
             return false;
         }
@@ -76,6 +82,11 @@ namespace InfluenceMapTest
         public void GiveInfluence(double inf)
         {
             influence += inf;
+        }
+
+        public void SetInfluence(double inf)
+        {
+            influence = inf;
         }
 
     }

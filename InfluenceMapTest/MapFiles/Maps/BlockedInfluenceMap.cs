@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using InfluenceMapTest.GameObjects;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
@@ -10,35 +11,44 @@ namespace InfluenceMapTest.MapFiles.Maps
 {
     class BlockedInfluenceMap : Map
     {
+        List<Cell> blockedCells = new List<Cell>();
 
-
-        public BlockedInfluenceMap(Texture2D texture)
-            :base(texture)
+        public BlockedInfluenceMap(Texture2D texture, Color myColor)
+            : base(texture, myColor)
         {
             this.texture = texture;
+            this.myColor = myColor;
+            CreateMap(myColor);
         }
 
-        public void SetCellOccupancy(Point pos, bool filler)
+        public void Update(List<GameObject> objs)
         {
-            if (pos.X > 0 && pos.X < mapWidth * cellWidth && pos.Y > 0 && pos.Y < mapHeight * cellHeight)
-            {
-                int x = pos.X / cellWidth;
-                int y = pos.Y / cellHeight;
-                if (filler)
-                    map[x, y].isOccupied = true;
-                else
-                    map[x, y].isOccupied = false;
-            }
-        }
-
-        public void ClearOccupancy()
-        {
+            blockedCells.Clear();
             for (int i = 0; i < mapWidth; i++)
             {
                 for (int j = 0; j < mapHeight; j++)
                 {
-                    map[i, j].ResetCell();
+                    foreach (GameObject obj in objs)
+                    {
+                        if (map[i, j].CheckOccupancy(obj))
+                        {
+                            map[i, j].isOccupied = true;
+                            blockedCells.Add(new Cell(texture, Color.Blue, map[i, j].GetPosition().X, map[i,j].GetPosition().Y, 16, 16));
+                            blockedCells[blockedCells.Count - 1].SetInfluence(1);
+                            break;
+                        }
+                        else
+                            map[i, j].isOccupied = false;
+                    }
                 }
+            }
+        }
+
+        public override void Draw(SpriteBatch spriteBatch)
+        {
+            foreach (Cell cell in blockedCells)
+            {
+                cell.Draw(spriteBatch);
             }
         }
 
